@@ -14,7 +14,7 @@ void humanMove(int board[]);
 int winner(int const board[]);
 int nbEmpty(int const board[]);
 void botMove(int board[]);
-int minmax(int board[], int depth, int player);
+int minmax(int board[], int depth, int player, int *index);
 int startingPlayer();
 void move(int board[], int player);
 void printWinner(int winnerPlayer);
@@ -35,11 +35,12 @@ void initBoard(int board[]) {
 }
 
 void printBoard(int const board[]) {
+  printf("\n");
   char symbol[] = {'X', '-', 'O'};
   for (int i = 0; i < L; i++) {
-    printf("%c", symbol[board[i] + 1]);
+    printf("%c ", symbol[board[i] + 1]);
     if (i%3 == 2)
-      printf("\n");
+      printf("\n\n");
   }
 }
 
@@ -53,11 +54,11 @@ int put(int board[], int player, int index) {
 int where() {
   int res;
   int s;
-  printf("Where do you want to play?\n");
+  printf("Where do you want to play? ");
   while(! (s = scanf("\n%d", &res))) {
     printf("Error, insert int\n");
     while(getchar() != '\n');
-    printf("Where do you want to play?\n");
+    printf("Where do you want to play? ");
     }
   return res-1;
 }
@@ -89,8 +90,10 @@ int winner(int const board[]) {
 }
 
 void botMove(int board[]) {
+  printf("Bot turn...\n");
   int depth = nbEmpty(board);
-  int index = minmax(board, depth, BOT);
+  int index;
+  minmax(board, depth, BOT, &index);
   board[index] = BOT;
 }
 
@@ -103,43 +106,44 @@ int nbEmpty(int const board[]) {
   return c;
 }
 
-// the bot is always the maximazing player
-int minmax(int board[], int depth, int player) {
+// the bot is the maximazing player
+int minmax(int board[], int depth, int player, int *index) {
   int winnerPlayer = winner(board);
-  if (depth == 0 || winnerPlayer != 0)
+  if (!depth || winnerPlayer)
     return winnerPlayer;
 
   // Either bigger than maximum or lower than minimum possible value
   int m = -2*player;
-  int res = -1;
 
   for (int i = 0; i < L; i++) {
+
     if (!board[i]) {
       board[i] = player;
-      int tmp = minmax(board, depth-1, -player);
-      if (player == 1 && tmp > m) {
-        m = tmp;
-        res = i;
+      int tmpM = minmax(board, depth-1, -player, NULL);
+      if (player == BOT && tmpM > m) {
+        m = tmpM;
+        if (index)
+          *index = i;
       }
-      else if (player == -1 && tmp < m) {
-        m = tmp;
-        res = i;
+      else if (player == HUMAN && tmpM < m) {
+        m = tmpM;
+        if (index)
+          *index = i;
       }
       board[i] = 0;
     }
   }
-
-  return res;
+  return m;
 }
 
 int startingPlayer() {
   char res;
   int s;
-  printf("Do you want to start? [y/n]\n");
+  printf("Do you want to start? [y/n] ");
   while(! (s = scanf("\n%c", &res))) {
     printf("Error, insert y or n\n");
     while(getchar() != '\n');
-    printf("Do you want to start? [y/n]\n");
+    printf("Do you want to start? [y/n] ");
     }
   return (res == 'y') ? HUMAN : BOT;
 }
@@ -163,11 +167,11 @@ void printWinner(int winnerPlayer) {
 int reset() {
   char res;
   int s;
-  printf("Do you want to play again? [y/n]\n");
+  printf("Do you want to play again? [y/n] ");
   while(! (s = scanf("\n%c", &res))) {
     printf("Error, insert y or n\n");
     while(getchar() != '\n');
-    printf("Do you want to play again? [y/n]\n");
+    printf("Do you want to play again? [y/n] ");
     }
   return (res == 'y');
 }
@@ -177,7 +181,7 @@ void game() {
   initBoard(board);
   int sPlayer = startingPlayer();
   int winnerPlayer;
-  while ( ( !(winnerPlayer = winner(board)) ) || (!nbEmpty(board)) ) {
+  while ( ( 0 == (winnerPlayer = winner(board)) ) && (0 != nbEmpty(board)) ) {
     printBoard(board);
     move(board, sPlayer);
     sPlayer = -sPlayer;
