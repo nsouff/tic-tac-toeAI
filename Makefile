@@ -5,4 +5,4 @@ CFLAGS=-Wall -g
 all: ttt
 
 clean:
-	rm -rf $(ALL)
+	rm -rf ttt
